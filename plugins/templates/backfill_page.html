@@ -1,0 +1,351 @@
+{% if airflow_major_version == 1 %}
+    {% extends 'airflow/master.html' %}
+{%else%}
+    {% extends base_template %}
+{%endif%}
+{% block title %}Airflow - Backfill Plugin{% endblock %}
+
+{% block head_css %}
+    {{ super() }}
+{% endblock %}
+
+{% block body %}
+    {% if airflow_major_version > 1 %}
+        {% block navbar %}
+        <header class="top" role="header">
+            {% include 'appbuilder/navbar.html' %}
+        </header>
+        {% endblock %}
+    {%endif%}
+
+    <div class="container">
+        <h2>Backfill</h2>
+        <hr/>
+
+        <!-- showing backfill status -->
+        <div id="backfill_status"></div>
+
+        <!-- start form -->
+        <form id="form" autocomplete="off">
+            <!-- dag related controls -->
+
+            <div class="row">
+                <div class="form-group col-md-8">
+                    <label for="start_date">DAG</label>
+                    <div class="form-group">
+                        <select class="form-control custom-select" name="dag_name" id="dag_name" required="required">
+                            <option disabled selected>Select Dag</option>
+                            {% for dag in dags %}
+                                <option value="{{ dag }}">{{ dag }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-10">
+                            <div class="form-check row">
+                                <div class="col-sm-6">
+                                    <input type="checkbox" name="rerun_failed_tasks",
+                                           class="custom-control-input mb-2 mr-sm-2" id="rerun_failed_tasks" value="yes"
+                                           checked="checked">
+                                    <label class="form-check-label" for="rerun_failed_tasks">
+                                        Rerun failed tasks <span class="info-icon" data-toggle="tooltip"
+                                                                 title="This will add the flag --rerun-failed-tasks to the backfill"
+                                                                 data-placement="right">&#9432;</span>
+                                    </label>
+                                </div>
+                                <div class="col-sm-6">
+                                    <input type="checkbox" name="reset_dagruns"
+                                           class="custom-control-input mb-2 mr-sm-2" id="reset_dagruns" value="yes"
+                                           checked="checked">
+                                    <label class="form-check-label" for="reset_dagruns">
+                                        Reset dagruns <span class="info-icon" data-toggle="tooltip"
+                                                            title="Runs backfill with parameter --rerun-failed-tasks"
+                                                            data-placement="right">&#9432;</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="start_date">Start Date</label>
+                        <input type="date" name="start_date" class="form-control mb-2 mr-sm-2" id="start_date"
+                               data-target="#start_date" required="true"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="end_date">End Date</label>
+                        <input type="date" name="end_date" class="form-control mb-2 mr-sm-2" id="end_date"
+                               data-target="#end_date" required="true"/>
+                    </div>
+                    <div class="form-group text-right">
+                        <input id="submit" type="submit" class="btn btn-primary mb-2 mr-sm-2" value="Start">
+                        <input type="reset" class="btn btn-default" value="Clear">
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- bottom pane -->
+        <div class="row">
+            <div class="col-md-12">
+                <!-- Tab header-->
+                <ul class="nav nav-tabs actions-nav">
+                    <li class="active">
+                        <a class="nav-link active" data-toggle="tab" id="load_backfill_history" href="#backfill_jobs">Backfill History
+                            <button class="btn btn-default btn-sm" id="backfill_history_refresh">
+                              <span class="material-icons" aria-hidden="true">refresh</span>
+                            </button>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" id="load_command_history" href="#history">Command History
+                            <button class="btn btn-default btn-sm" id="command_history_refresh">
+                              <span class="material-icons" aria-hidden="true">refresh</span>
+                            </button>
+                        </a>
+                    </li>
+                </ul>
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <!-- Backfill job history -->
+                    <div id="backfill_jobs" class="container tab-pane fade active in"><br>
+                        <div class="table-responsive">
+                           <table class="table table-bordered table-hover">
+                              <thead>
+                                 <tr>
+                                    <th><a data-original-title="" title="">Id
+                                       <i class="fa fa-arrows-v text-muted"></i></a>
+                                    </th>
+                                    <th><a
+                                       data-original-title="" title="">Dag Id
+                                       <i class="fa fa-arrows-v text-muted"></i></a>
+                                    </th>
+                                    <th><a
+                                       data-original-title="" title="">State
+                                       <i class="fa fa-arrows-v text-muted"></i></a>
+                                    </th>
+                                    <th><a
+                                       data-original-title="" title="">Job Type
+                                       <i class="fa fa-arrows-v text-muted"></i></a>
+                                    </th>
+                                    <th><a
+                                       data-original-title="" title="">Start Date
+                                       <i class="fa fa-arrows-v text-muted"></i></a>
+                                    </th>
+                                    <th><a
+                                       data-original-title="" title="">End Date
+                                       <i class="fa fa-arrows-v text-muted"></i></a>
+                                    </th>
+                                    <th>
+                                       <a href="/job/list/?_flt_0_job_type=Backfill&amp;_oc_JobModelView=latest_heartbeat&amp;_od_JobModelView=asc"
+                                          data-original-title="" title="">Latest Heartbeat
+                                       <i class="fa fa-arrows-v text-muted"></i></a>
+                                    </th>
+                                    <th>
+                                       <a href="/job/list/?_flt_0_job_type=Backfill&amp;_oc_JobModelView=executor_class&amp;_od_JobModelView=asc"
+                                          data-original-title="" title="">Executor Class
+                                       <i class="fa fa-arrows-v text-muted"></i></a>
+                                    </th>
+                                    <th><a href="/job/list/?_flt_0_job_type=Backfill&amp;_oc_JobModelView=hostname&amp;_od_JobModelView=asc"
+                                       data-original-title="" title="">Hostname
+                                       <i class="fa fa-arrows-v text-muted"></i></a>
+                                    </th>
+                                    <th><a href="/job/list/?_flt_0_job_type=Backfill&amp;_oc_JobModelView=unixname&amp;_od_JobModelView=asc"
+                                       data-original-title="" title="">Unixname
+                                       <i class="fa fa-arrows-v text-muted"></i></a>
+                                    </th>
+                                 </tr>
+                              </thead>
+                              <tbody id="backfill_history">
+                              </tbody>
+                           </table>
+                        </div>
+                    </div>
+                    <!-- Backfill command history -->
+                    <div id="history" class="container tab-pane fade"><br>
+                        <p>No data</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block tail %}
+    <script>
+        $(document).ready(function () {
+
+            const background_success_message = '<div class="alert alert-success alert-dismissible">' +
+                '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>' +
+                '<strong>&#128077;</strong> Backfill job submitted' +
+                '</div>';
+
+            const spinner_background_message = '<div class="alert alert-info" role="alert">Submitting backfill task</div>';
+
+            const show_submission_in_progress = function () {
+                $("#backfill_status").html(spinner_background_message)
+            };
+
+            const show_submission_done = function () {
+                $("#backfill_status").html(background_success_message)
+            };
+
+            const disable_user_input = function () {
+                $("#form :input").prop("disabled", true);
+            };
+
+            const enable_user_input = function () {
+                $("#form :input").prop("disabled", false);
+            };
+
+            const load_backfill_history = function () {
+                $.get(window.location.toString().split("/admin/backfill")[0] + '/admin/backfill/backfill_jobs', function (data_rows) {
+                    const state_map = {
+                        success: "green",
+                        failed: "red",
+                        running: "lime",
+                        queued: "",
+                    }
+
+                    if (data_rows != null) {
+                        let rows = "";
+                        data_rows.forEach(function (job) {
+                            const row =
+                                '<tr> ' +
+                                    `<td>${job.id}</td>` +
+                                    `<td>${job.dag_id}</td>` +
+                                    `<td><span class="label" style="color:white; background-color:${state_map[job.state]};" title="Current State: ${job.state}">${job.state}</span></td>` +
+                                    `<td>${job.job_type}</td>` +
+                                    `<td><nobr> <time title="" data-original-title="">${job.start_date}</time> </nobr></td>` +
+                                    `<td><nobr> <time title="" data-original-title="">${job.end_date}</time> </nobr></td>` +
+                                    `<td><nobr> <time title="" data-original-title="">${job.latest_heartbeat}</time> </nobr></td>` +
+                                    `<td>${job.executor_class}</td>` +
+                                    `<td><nobr>${job.hostname}</nobr></td>` +
+                                `<td>${job.unixname}</td>` +
+                                '</tr>';
+                            rows = rows.concat(row);
+                        })
+                        $("#backfill_history").html(rows);
+                    } else {
+                        $("#backfill_history").html('Something went wrong!');
+                    }
+                })
+            };
+
+            const load_command_history = function () {
+                $("#history").html('Fetching history...');
+
+                $.get(window.location.toString().split("/admin/backfill")[0] + '/admin/backfill/history', function (data) {
+
+                    if (data != null) {
+                        let data_rows = data.split('\n');
+
+                        let rows = [];
+                        data_rows.forEach(function (row_data) {
+                            let row = row_data.split(',');
+                            let time = moment(row[1]).format('YYYY-MM-DD HH:mm:SS');
+                            let r = '<div style="margin-top:10px;border-bottom:1px solid #f1f1f1; padding-bottom: 10px;">' +
+                                        row[0] +
+                                        '<span class="far fa-clock" style="float:right; font-size: 12px; color: #565656;">&nbsp;&nbsp;' +
+                                            time +
+                                        '</span>' +
+                                    '</div>';
+                            rows.push(r)
+                        });
+
+                        let rev_array = rows.reverse().join('');
+
+                        $("#history").html(rev_array)
+                    } else {
+                        $("#history").html('Something went wrong!')
+                    }
+                })
+            };
+
+            const submit_backfill = function (event) {
+                event.preventDefault();
+
+                const dag_name = $("#dag_name").val();
+                const start_date = moment($("#start_date").val()).format('YYYY-MM-DD');
+                const end_date = moment($("#end_date").val()).format('YYYY-MM-DD');
+
+                const reset_dagruns = $("#reset_dagruns").prop("checked");
+                const rerun_failed_tasks = $("#rerun_failed_tasks").prop("checked");
+
+
+                if (start_date > end_date) {
+                    alert('Start date should be less than end date ');
+                    return false;
+                }
+                if(!dag_name){
+                    alert('Dag not set ');
+                    return false;
+                }
+
+                const query_string = (
+                    "?dag_name=" + dag_name +
+                    "&start_date=" + start_date +
+                    "&end_date=" + end_date +
+                    "&user_name=" + "{{ current_user.email or 'no_email'}}" +
+                    "&rerun_failed_tasks=" + rerun_failed_tasks +
+                    "&reset_dagruns=" + reset_dagruns);
+
+                disable_user_input()
+
+                const user_accepted = confirm("Start backfill for DAG => '" + dag_name + "'.\n Please click OK if DAG name is correct.");
+
+                if (user_accepted === true) {
+                    const url = window.location.toString().split("/admin/backfill")[0] + '/admin/backfill/submit_backfill' + query_string;
+
+                    show_submission_in_progress();
+                    $.get(url, function (data) {
+                        // show background submission task message
+                        show_submission_done();
+                        enable_user_input()
+                    })
+                } else {
+                    enable_user_input()
+                }
+                load_backfill_history()
+            };
+
+            // Set Calendar end to today
+            Date.prototype.toDateInputValue = (function() {
+                let local = new Date(this);
+                local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+                return local.toJSON().slice(0,10);
+            });
+            $('#end_date').val(new Date().toDateInputValue());
+
+            $(document).on("submit", "#form", submit_backfill);
+            $(document).on('click', '#load_command_history', load_command_history);
+            $(document).on('click', '#command_history_refresh', load_command_history);
+            $(document).on('click', '#load_backfill_history', load_backfill_history);
+            $(document).on('click', '#backfill_history_refresh', load_backfill_history);
+            load_backfill_history()
+
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+
+    <style>
+        .row {
+            margin-bottom: 10px;
+        }
+
+        .info-icon {
+            font-weight: bolder;
+        }
+
+        hr {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            border: 0;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+    </style>
+{% endblock %}
