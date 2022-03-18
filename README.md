@@ -4,6 +4,8 @@ An Airflow plugin, providing an admin UI to conveniently start and monitor backf
 With this solution you can start backfills of arbitrary sizes.
 Tested with backfills spanning multiple years. Now even non technical people can start backfills without the hassle of console commands and logging into vms.
 
+This repo is actively maintained, and commercially used. Feel free to contribute or reach out if you have compatibility issues or improvement ideas. This repository is a combination of the best features of all the backfill plugins floating around, combined and fixed all issues.
+
 ![img](img/ui-overview.png)
 
 ## How to
