@@ -55,4 +55,4 @@ In the Command History you can see the history of submitted commands, and the us
 ## Tested with
 * Airflow 2.2.3
 * Airflow 1.10.9
-* Airflow 2.1.4+composer
+* Airflow 2.1.4 + Composer 2.0.2
