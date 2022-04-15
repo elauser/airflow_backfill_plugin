@@ -1,4 +1,4 @@
-# airflow_backifll
+# airflow_backfill
 An Airflow plugin, providing an admin UI to conveniently start and monitor backfills.
 
 With this solution you can start backfills of arbitrary sizes.
