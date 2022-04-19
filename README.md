@@ -56,3 +56,13 @@ In the Command History you can see the history of submitted commands, and the us
 * Airflow 2.2.3
 * Airflow 1.10.9
 * Airflow 2.1.4 + Composer 2.0.2
+
+
+## troubleshooting tips
+On airflow composer when the plugin is installed and shows up in the plugins admin tab but the backfill icon doesn't show up 
+
+* Airflow 2.2.3 + Composer 2.0.8
+* Airflow 2.1.4 + Composer 2.0.9
+
+but you can use the backfill plugin open the backfill url direct : composer url + /admin/backfill
+we are currently working to solve it soon
