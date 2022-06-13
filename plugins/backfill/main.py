@@ -67,11 +67,11 @@ class Backfill(BaseView):
         reset_dagruns = request.args.get("reset_dagruns") == 'true'
         user_name = request.args.get("user_name")
 
-        # DagBag for Airflow 1 & 2, current_app for GCP Composer
-        # TODO figure out a way to correctly get the dags_folder path for Cloud Composer
+        # DagBag does not always work, fallback to current_app... catches the rest
         dag = DagBag(conf.get("core", 'dags_folder')).get_dag(dag_name) or current_app.dag_bag.get_dag(dag_name)
 
-        # New process, otherwise the web server gets blocked and terminated after a minute
+        # Execute Backfill in a new process. 
+        # Threads or blocking execution does not work as the web server will not be pingable anymore and terminate itself.
         process = Process(target=self.execute_backfill,
                           args=(
                               dag,
